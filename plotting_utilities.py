@@ -56,7 +56,7 @@ def plot_roc_curve(true_response, pred_responses, labels, ax, fnr_threshold = 0.
 #https://matplotlib.org/gallery/images_contours_and_fields/image_annotated_heatmap.html
 def heatmap(data, row_labels, col_labels,
             row_title = '', col_title = '', ax=None,
-            cbar_kw={}, cbarlabel="",
+            cbar_kw={}, cbarlabel="", vmin=None, vmax=None,
             x_tick_rotation = 0, **kwargs):
     """
     Create a heatmap from a numpy array and two lists of labels.
@@ -82,6 +82,12 @@ def heatmap(data, row_labels, col_labels,
 
     if not ax:
         ax = plt.gca()
+        
+    if not vmin:
+        vmin = min(data)
+        
+    if not vmax:
+        vmax = max(data)
 
     # Plot the heatmap
     im = ax.imshow(data, **kwargs)
