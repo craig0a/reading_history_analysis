@@ -84,10 +84,10 @@ def heatmap(data, row_labels, col_labels,
         ax = plt.gca()
         
     if not vmin:
-        vmin = min(data)
+        vmin = np.amin(data)
         
     if not vmax:
-        vmax = max(data)
+        vmax = np.amax(data)
 
     # Plot the heatmap
     im = ax.imshow(data, **kwargs)
@@ -270,10 +270,11 @@ def plot_grid_search(results, grid_param_1, grid_param_2, name_param_1, name_par
     ax[2].grid('on')
 
 def jointplot(x,y, c = 'k', cmap = 'gray',
-              xmin = 0, xmax = 1, ymin = 0, ymax = 1, delta = 0.05,
-              gridsize = 50,
+              xmin = 0, xmax = 1, ymin = 0, ymax = 1, delta = 0.05, logscale = False,
+              gridsize = 50, alpha = 1, bins = None,  
               joint_xlabel = '', joint_ylabel = '',
-              marginal_xlabel = '', marginal_ylabel = ''):
+              marginal_xlabel = '', marginal_ylabel = '', 
+              fig_axes = None, joint_type = 'hex'):
     """
     joint plot of two continuous features; effectively a replacement of seaborn jointplot
 
@@ -283,21 +284,41 @@ def jointplot(x,y, c = 'k', cmap = 'gray',
         fig, ax_joint, ax_marg_x, ax_marg_y : handles to figure and each of the three subplot axes
     """
 
+    if fig_axes == None:
+        fig = plt.figure()
+        gs = GridSpec(4,4)
 
-    fig = plt.figure()
-    gs = GridSpec(4,4)
+        ax_joint = fig.add_subplot(gs[1:4,0:3])
+        ax_marg_x = fig.add_subplot(gs[0,0:3])
+        ax_marg_y = fig.add_subplot(gs[1:4,3])
+    else:
+        fig,ax_joint,ax_marg_x,ax_marg_y = fig_axes
+        
+    if joint_type == 'hex':
+        ax_joint.hexbin(x,y, cmap = cmap, bins= 'log', gridsize = gridsize )
+    elif joint_type == 'scatter':
+        ax_joint.scatter(x,y, color = c, alpha= alpha)
+    
+    if bins:
+        ax_marg_x.hist(x, density = False, color = c, alpha = alpha, bins = bins[0], align = 'mid')
+        ax_marg_y.hist(y, density = False, color = c, alpha = alpha, bins = bins[1], align = 'mid', orientation="horizontal")
+    else:
+        ax_marg_x.hist(x, density = False, color = c, alpha = alpha, range = (xmin, xmax), align = 'mid')
+        ax_marg_y.hist(y, density = False, color = c, alpha = alpha,  range = (ymin, ymax), align = 'mid', orientation="horizontal")
+    
+    if logscale:
+        ax_joint.set_xscale('log')
+        ax_joint.set_yscale('log')
+        ax_marg_x.set_xscale('log')
+        ax_marg_x.set_yscale('log')
+        ax_marg_y.set_xscale('log')
+        ax_marg_y.set_yscale('log')
+    else:
+        ax_joint.axis([xmin-delta, xmax+delta, ymin-delta, ymax+delta])
+        ax_marg_x.set_xlim([xmin-delta, xmax+delta])
+        ax_marg_y.set_ylim([ymin-delta, ymax+delta])
 
-    ax_joint = fig.add_subplot(gs[1:4,0:3])
-    ax_marg_x = fig.add_subplot(gs[0,0:3])
-    ax_marg_y = fig.add_subplot(gs[1:4,3])
-
-    ax_joint.hexbin(x,y, cmap = cmap, bins= 'log', gridsize = gridsize )
-    ax_joint.axis([xmin-delta, xmax+delta, ymin-delta, ymax+delta])
-
-    ax_marg_x.hist(x, density = False, color = c, range = (xmin, xmax), align = 'mid')
-    ax_marg_x.set_xlim([xmin-delta, xmax+delta])
-    ax_marg_y.hist(y, density = False, color = c, range = (xmin, xmax), align = 'mid', orientation="horizontal")
-    ax_marg_y.set_ylim([ymin-delta, ymax+delta])
+    
 
     # Turn off tick labels on marginals
     plt.setp(ax_marg_x.get_xticklabels(), visible=False)
